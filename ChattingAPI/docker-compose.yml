@@ -1,0 +1,25 @@
+﻿version: '3.8'
+
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"  # Adjust the ports as needed
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: chat
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"  # Adjust the ports as needed
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

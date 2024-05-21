@@ -1,0 +1,6 @@
+@ChattingAPI_HostAddress = http://localhost:5290
+
+GET {{ChattingAPI_HostAddress}}/message/
+Accept: application/json
+
+###

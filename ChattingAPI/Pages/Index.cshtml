@@ -1,0 +1,132 @@
+﻿@page
+@model ChattingAPI.IndexModel
+@{
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat API demo</title>
+</head>
+<body>
+    <a href="./swagger/index.html">Go to SwaggerUI</a>
+    <h2>Chatting Message</h2>
+    <textarea cols="60" rows="2"></textarea>
+    <button id="send">Send</button>
+    <div id="status"></div>
+    <h2>Received Message</h2>
+    <div id="received"></div>
+    <h2>Message History</h2>
+    <button id="get">Get History of last 10 minutes</button>
+    <table id="messageTable" border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Timestamp</th>
+                <th>Content</th>
+            </tr>
+        </thead>
+        <tbody id="messageTableBody">
+        </tbody>
+    </table>
+</body>
+<script>
+    const btnSend = document.querySelector("#send");
+    const btnGet = document.querySelector("#get");
+    const status = document.querySelector("#status");
+    const history = document.querySelector("#history");
+    const received = document.querySelector("#received");
+    const textarea = document.querySelector("textarea");
+    const wsUri = "ws://127.0.0.1:8081";
+    const websocket = new WebSocket(wsUri);
+
+    btnSend.addEventListener("click", onClickButtonSend);
+    btnGet.addEventListener("click", onClickButtonGet);
+
+    websocket.onopen = (e) => {
+        writeToScreen(status, "CONNECTED to WebSocket " + wsUri);
+    };
+
+    websocket.onclose = (e) => {
+        writeToScreen(status, "DISCONNECTED WebSocket");
+    };
+
+    websocket.onmessage = (e) => {
+        writeToScreen(received, `<span>${e.data}</span>`);
+    };
+
+    websocket.onerror = (e) => {
+        writeToScreen(status, `<span class="error">ERROR:</span> ${e.data}`);
+    };
+
+//    function doSend(message) {
+//        writeToScreen(`SENT: ${message}`);
+//        websocket.send(message);
+//    }
+    function createTableRows(data) {
+        const tbody = document.getElementById("messageTableBody");
+
+        // Clear previous rows
+        tbody.innerHTML = "";
+
+        // Iterate over the data and create rows
+        data.forEach(item => {
+            const tr = document.createElement("tr");
+            Object.keys(item).forEach(key => {
+                const td = document.createElement("td");
+                td.textContent = item[key];
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    function writeToScreen(control, message) {
+        control.insertAdjacentHTML("afterbegin", `<p>${message}</p>`);
+    }
+
+    function onClickButtonSend() {
+        const text = textarea.value;
+        if (text){
+            fetch("/api/message", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: '"' + text + '"'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    //writeToScreen(status, `Sent`);
+                })
+                .catch(error => {
+                    writeToScreen(status, `Error: ${error.message}`);
+                });
+
+            textarea.value = "";
+            textarea.focus();
+        }
+    }
+
+    function onClickButtonGet() {
+        fetch("/api/message")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            return response.json();
+        })
+        .then(data => {
+                createTableRows(data);
+        })
+        .catch(error => {
+            writeToScreen(status, `Error: ${error.message}`);
+        });
+    }
+</script>
+</html>
